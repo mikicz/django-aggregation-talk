@@ -1,0 +1,7 @@
+yarn-error.log
+node_modules
+.idea
+dist/
+venv
+__pycache__
+
