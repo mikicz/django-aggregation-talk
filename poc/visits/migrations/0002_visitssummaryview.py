@@ -4,23 +4,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('visits', '0001_initial'),
+        ("visits", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='VisitsSummaryView',
+            name="VisitsSummaryView",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('section', models.CharField(max_length=100)),
-                ('visit_date', models.DateField()),
-                ('count', models.IntegerField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("section", models.CharField(max_length=100)),
+                ("visit_date", models.DateField()),
+                ("count", models.IntegerField()),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
     ]

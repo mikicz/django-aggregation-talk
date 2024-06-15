@@ -27,3 +27,31 @@ class VisitsSummaryView(pg.View):
               "visits_pagevisit"."section",
               ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date
     """
+
+
+class VisitsSummaryMaterializedView(pg.MaterializedView):
+    user = models.ForeignKey("auth.User", on_delete=models.DO_NOTHING)
+    section = models.CharField(max_length=100)
+    visit_date = models.DateField()
+    count = models.IntegerField()
+
+    concurrent_index = "id"
+
+    sql = """
+    SELECT 
+           ROW_NUMBER() over () as id,
+           "visits_pagevisit"."user_id",
+           "visits_pagevisit"."section",
+           ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date AS "visit_date",
+           COUNT("visits_pagevisit"."id") AS "count"
+    FROM "visits_pagevisit"
+    GROUP BY "visits_pagevisit"."user_id",
+              "visits_pagevisit"."section",
+              ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date
+    """
+
+    class Meta:
+        managed = False
+        indexes = [
+            models.Index(fields=["user_id"]),
+        ]
