@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from copy import deepcopy
 from pathlib import Path
+
+from django.utils.log import DEFAULT_LOGGING
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -141,3 +144,26 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
+
+
+logging_dict = deepcopy(DEFAULT_LOGGING)
+logging_dict["formatters"]["console"] = {
+    "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+    "datefmt": "%d/%b/%Y %H:%M:%S",
+}
+logging_dict["handlers"]["console"] = {
+    "class": "logging.StreamHandler",
+    "formatter": "console",
+    "level": "INFO",
+}
+logging_dict["loggers"][""] = {
+    "level": "INFO",
+    "handlers": ["console"],
+    "propagate": False,
+}
+logging_dict["loggers"]["django_pgviews.sync_pgviews.exists"] = {
+    "level": "WARNING",
+    "handlers": ["console"],
+    "propagate": False,
+}
+LOGGING = logging_dict
