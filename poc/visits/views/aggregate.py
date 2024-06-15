@@ -22,6 +22,7 @@ class AggregateView(ListAPIView):
             PageVisit.objects.annotate(visit_date=TruncDate("visit_time"))
             .values("user", "section", "visit_date")
             .annotate(count=Count("id"))
+            .order_by("-count")
         )
 
 
@@ -59,4 +60,5 @@ class AggregateViewWithUser(ListAPIView):
                 "visit_date",
             )
             .annotate(count=Count("id"))
+            .order_by("-count")
         )
