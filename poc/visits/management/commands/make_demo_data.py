@@ -31,7 +31,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         exclude = ["profile"]
 
 
-SECTIONS = ["index", "dashboard", "sections"]
+SECTIONS = ["index", "dashboard", "settings"]
 
 
 def section():
