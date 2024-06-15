@@ -23,11 +23,13 @@ from django.conf.urls.static import static
 
 from django.conf import settings
 from visits.views.aggregate import AggregateView, AggregateViewWithUser
+from visits.views.view import ViewView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("aggregate/", AggregateView.as_view()),
     path("aggregate-with-user/", AggregateViewWithUser.as_view()),
+    path("view/", ViewView.as_view()),
     path("__debug__/", include("debug_toolbar.urls")),
 ]
 
