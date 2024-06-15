@@ -133,6 +133,13 @@ Indexes
 
 ---
 
+# Other view usages
+
+Database de-normalisation
+Expensive calculated values
+
+---
+
 # Conclusion
 
 Add views to your reportaire 
