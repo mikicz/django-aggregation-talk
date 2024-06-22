@@ -8,7 +8,8 @@ fonts:
   sans: "Barlow"
 ---
 
-# **Aggregating data in Django using database views**
+# **Aggregating data in Django** 
+# **using database views**
 
 ### a talk by Mikuláš Poul
 ### July 10th, 2024 - Europython
@@ -34,21 +35,20 @@ fonts:
 Mention all links & relevant details are on mikulaspoul, plus a blog and link to this talk
 -->
 
----
+--- 
 
-# Motivation slide
+# Contents
 
-Talk about what technologies you need to know
-Basic Django, Basic SQL
+- A brief overview of aggregation using native Django
+- Introduction to database views
+- Introduction to the package `django-pgviews-redux`
+- Introduction to materialized views
 
-- Intro [1m]
-- Describe examples of aggregating data from django models [4m]
-- Describe downsides of inbuilt django methods [5m]
-- Introduce database views [5m]
-- Introduce django-pgviews-redux library [2m]
-- Show-off how to use the views from the library as models [5m]
-- Describe trade-offs of database views [3m]
-- Introduce materialized views [5m]
+<v-click>
+
+- Soft pre-requisites: Django & SQL
+
+</v-click>
 
 ---
 
@@ -56,11 +56,12 @@ Basic Django, Basic SQL
 
 - Aggregation - combining multiple pices of information in a single result
 
-<v-click>
+<v-clicks>
 
+- Any sort of statistics and reporting usually involve aggregation
 - An aggregation method everyone has used is queryset's `.count()`
 
-</v-click>
+</v-clicks>
 
 
 ---
@@ -79,7 +80,6 @@ class PageVisit(models.Model):
 
 # Data Aggregation In Django
 
-- *Aggregation*: combining multiple pices of information in a single result
 - An aggregation method everyone has used is queryset's `.count()`
 
 <v-click>
@@ -103,16 +103,34 @@ class PageVisit(models.Model):
 
 </v-click>
 
-<v-click>
+---
+
+# Data Aggregation In Django
 
 - There's many different aggregation functions 
 
 ```python
-from django.db.models import Max
+>> from django.db.models import Max
 >> PageVisit.objects.filter(section="index").aggregate(Max("visit_time"))
 {'visit_time__max': datetime(2024, 6, 15, 12, 15, 28, 138712, tzinfo=datetime.timezone.utc)}
 ```
+
+<v-click>
+
+```python
+>> from django.db.models import Min
+>> PageVisit.objects.filter(section="index").aggregate(Min("visit_time"))
+{'visit_time__min': datetime.datetime(2024, 6, 1, 0, 2, 22, 37100, tzinfo=datetime.timezone.utc)}
+```
+
 </v-click>
+
+<v-clicks>
+
+- Other methods include `Sum`, `Avg`, `StdDev`
+- You can define your own
+
+</v-clicks>
 
 <!--
 Aggregate returns a dictionary
@@ -149,6 +167,8 @@ Aggregate returns a dictionary
 
 # Let's build something!
 
+<!-- TODO make central -->
+
 --- 
 
 # Let's build something!
@@ -174,7 +194,7 @@ class AggregateView(ListAPIView):
 
 ---
 
-# Let's build something
+# Let's build something!
 
 Let's build an API which shows section visits per user pay day.
 
@@ -195,12 +215,6 @@ class AggregateSerializer(serializers.Serializer):
       "section": "index",
       "visit_date": "2024-06-12",
       "count": 38
-    },
-    {
-      "user": 688,
-      "section": "dashboard",
-      "visit_date": "2024-06-03",
-      "count": 36
     },
     ...
 ]
@@ -251,9 +265,18 @@ PageVisit.objects.annotate(visit_date=TruncDate("visit_time")).values(
 
 </v-click>
 
+---
+
+# Downsides of the django aggregation
+
+Despite being powerful, there are downsides
+
+- The values returned are dictionaries, not objects
+- Foreign keys are primary-keys only
+-  Displaying needs to be fairly manual
+
 <v-clicks>
 
-- Displaying needs to be fairly manual
 - Reusing the aggregation is tricky 
 
 </v-clicks>
@@ -262,22 +285,31 @@ PageVisit.objects.annotate(visit_date=TruncDate("visit_time")).values(
 
 # Database Views
 
-- A virtual table in database defined by a query
-- Behaves like a normal table for SELECT
-- Evaluates every single time
-- Just syntactic sugar
-- Supported by Postgres, MySQL, ...
-- Does not use any extra disk space
+<!--- TODO make central --->
 
 ---
 
 # Database Views
 
-```sql
+- A virtual table in database defined by a query
+
+<v-clicks>
+
+- Behaves like a normal table for SELECT
+- Evaluates every single time
+- Just syntactic sugar
+- Supported by most common relational databases
+- Does not use any extra disk space
+
+</v-clicks>
+
+---
+
+# Database Views
+
+```sql {all|1|2-4,7-9|5|6|all}
 CREATE VIEW visits_visitssummary AS
-SELECT 
-       ROW_NUMBER() over () as id,
-       "visits_pagevisit"."user_id",
+SELECT "visits_pagevisit"."user_id",
        "visits_pagevisit"."section",
        ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date AS "visit_date",
        COUNT("visits_pagevisit"."id") AS "count"
@@ -308,10 +340,15 @@ TODO: Make this section header
 # Enter django-pgviews-redux
 
 - Library to add good support for database views to Django
+
+<v-clicks>
+
 - Maintaned primarily by me at Xelix
 - Fork of an earlier library called django-pgviews by Pebble 
 - Support for modern Python and Django, with extra features
 - Postgres specific
+
+</v-clicks>
 
 ---
 
@@ -347,7 +384,7 @@ $ python manage.py sync_pgviews
 
 # Defining a view
 
-```python
+```python {all|1,3|9-19|10|4-8|all}
 from django_pgviews.view import View
 
 class VisitsSummaryView(View):
@@ -357,8 +394,7 @@ class VisitsSummaryView(View):
     count = models.IntegerField()
 
     sql = """
-    SELECT 
-           ROW_NUMBER() over () as id,  --- Django requires a primary key, id by default
+    SELECT ROW_NUMBER() over () as id,  --- Django requires a primary key, id by default
            "visits_pagevisit"."user_id",
            "visits_pagevisit"."section",
            ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date AS "visit_date",
@@ -374,7 +410,7 @@ class VisitsSummaryView(View):
 
 # Use the view
 
-```python
+```python {all|3|all}
 class ViewView(ListAPIView):
     serializer_class = ViewSerializer
     queryset = VisitsSummaryView.objects.select_related("user").order_by("-count")
@@ -382,7 +418,7 @@ class ViewView(ListAPIView):
 
 <v-click>
 
-```python
+```python {all|11,12|8,1-4|all}
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -426,47 +462,41 @@ class ViewSerializer(serializers.ModelSerializer):
 
 # Under the hood
 
-```sql
+```sql {all|12|1-5|6-11,13|14|all}
 SELECT "visits_visitssummaryview"."id",
        "visits_visitssummaryview"."user_id",
        "visits_visitssummaryview"."section",
        "visits_visitssummaryview"."visit_date",
        "visits_visitssummaryview"."count",
        "auth_user"."id",
-       "auth_user"."password",
-       "auth_user"."last_login",
-       "auth_user"."is_superuser",
-       "auth_user"."username",
        "auth_user"."first_name",
        "auth_user"."last_name",
        "auth_user"."email",
-       "auth_user"."is_staff",
-       "auth_user"."is_active",
-       "auth_user"."date_joined"
+       "auth_user"."username"
+       --- more of the user fields ---
 FROM "visits_visitssummaryview"
 INNER JOIN "auth_user" ON ("visits_visitssummaryview"."user_id" = "auth_user"."id")
 ORDER BY "visits_visitssummaryview"."count" DESC
 ```
 
 ---
-layout: two-cols
----
 
 # Issues
 
-1. The values returned are dictionaries, not objects
-2. Foreign keys are primary-keys only
-3. Displaying needs to be fairly manual
-4. Reusing the aggregation is tricky
+<v-clicks>
 
-::right::
+- The values returned are dictionaries, not objects
+  - Returns instances of the view model 
+- Foreign keys are primary-keys only
+  - Can lazy load related objects, select related / prefetch related 
+- Displaying needs to be fairly manual
+  - Django & library can use the defined fields to auto-discover 
+- Reusing the aggregation is tricky
+  - Aggregation is defined just once in model
 
-# Solution
+</v-clicks>
 
-1. Returns instances of the view model
-2. Can lazy load related objects, select related / prefetch related
-3. Django & library can use the defined fields to auto-discover
-4. Aggregation is defined just once in model
+<!-- TODO: investigate different point icon -->
 
 ---
 
@@ -485,15 +515,26 @@ class VisitsSummaryViewAdmin(admin.ModelAdmin):
 
 </v-click>
 
-<!--
-More custom features?
--->
+<v-click>
+
+- Django Filters? Sure!
+```python
+from django_filters import rest_framework as filters
+
+class VisitsSummaryViewFilter(filters.FilterSet):
+    class Meta:
+        model = VisitsSummaryView
+        fields = ["section", "visit_date"]
+```
+
+</v-click>
+
 
 ---
 
 # Inside the engine under the hood
 
-```sql
+```sql {all|8-18}
 SELECT summary."id",
        summary."user_id",
        summary."section",
@@ -530,6 +571,12 @@ TODO: make central
 
 # Materialized View
 
+<!-- TODO: make central -->
+
+---
+
+# Materialized View
+
 - Stores the query result in a temporary table
 - On update of underlying data it becomes stale
 - The view needs to be explicitly refreshed
@@ -552,18 +599,17 @@ SELECT ...
 
 # Defining a materialized view
 
-```python
+```python {all|1,3}
 from django_pgviews.view import MaterializedView
 
-class VisitsSummaryMaterializedView(MaterializedView):  # MaterializedView instead of View
+class VisitsSummaryMaterializedView(MaterializedView):
     user = models.ForeignKey("auth.User", on_delete=models.DO_NOTHING)
     section = models.CharField(max_length=100)
     visit_date = models.DateField()
     count = models.IntegerField()
 
     sql = """
-    SELECT 
-           ROW_NUMBER() over () as id,  --- Django requires a primary key, id by default
+    SELECT ROW_NUMBER() over () as id,  --- Django requires a primary key, id by default
            "visits_pagevisit"."user_id",
            "visits_pagevisit"."section",
            ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date AS "visit_date",
@@ -603,6 +649,14 @@ VisitsSummaryMaterializedView.refresh()
 ```
 
 </v-click>
+
+---
+
+# Using materialized views
+
+Exactly the same as normal view!
+
+<!-- todo make central -->
 
 ---
 
