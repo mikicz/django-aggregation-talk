@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "django_pgviews",
     "django_extensions",
+    "django_filters",
     "visits",
 ]
 

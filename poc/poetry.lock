@@ -104,6 +104,20 @@ files = [
 Django = ">=3.2"
 
 [[package]]
+name = "django-filter"
+version = "24.2"
+description = "Django-filter is a reusable Django application for allowing users to filter querysets dynamically."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django-filter-24.2.tar.gz", hash = "sha256:48e5fc1da3ccd6ca0d5f9bb550973518ce977a4edde9d2a8a154a7f4f0b9f96e"},
+    {file = "django_filter-24.2-py3-none-any.whl", hash = "sha256:df2ee9857e18d38bed203c8745f62a803fa0f31688c9fe6f8e868120b1848e48"},
+]
+
+[package.dependencies]
+Django = ">=4.2"
+
+[[package]]
 name = "django-pgviews-redux"
 version = "0.10.0"
 description = "Create and manage Postgres SQL Views in Django"
@@ -478,4 +492,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f6c61e0c2509f30bad0e3e765d88752347a05298e7732eb5464bee55f66c3f2a"
+content-hash = "57b9851b2dc8aacba5596bda89cd7fe94161834a4b738e963a053b365d4cd55d"
