@@ -68,7 +68,7 @@ Mention all links & relevant details are on mikulaspoul, plus a blog and link to
 
 # Let's define a model
 
-```python
+```python {all|1|2|3|4}
 class PageVisit(models.Model):
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
     section = models.CharField(max_length=100)
@@ -96,7 +96,8 @@ class PageVisit(models.Model):
 - This is syntactic sugar around `.aggregate()`
 - That method runs aggregation on the entire queryset
 
-```python
+```python {all|2|1|3}
+>> from django.db.models import Count
 >> PageVisit.objects.aggregate(count=Count("*"))["count"] or 0
 0
 ```
@@ -173,11 +174,11 @@ Aggregate returns a dictionary
 
 # Let's build something!
 
-Let's build an API which shows section visits per user pay day.
+Let's build an API which shows section visits per user per day.
 
 <v-click>
 
-```python
+```python {all|1|4-10|2}
 class AggregateView(ListAPIView):
     serializer_class = AggregateSerializer
 
@@ -188,7 +189,6 @@ class AggregateView(ListAPIView):
             .annotate(count=Count("id"))
             .order_by("-count")
         )
-
 ```
 </v-click>
 
@@ -196,7 +196,7 @@ class AggregateView(ListAPIView):
 
 # Let's build something!
 
-Let's build an API which shows section visits per user pay day.
+Let's build an API which shows section visits per user per day.
 
 ```python
 class AggregateSerializer(serializers.Serializer):
@@ -226,7 +226,7 @@ class AggregateSerializer(serializers.Serializer):
 
 # Under the hood
 
-```sql
+```sql {all|1-4|5|6-8|9}
 SELECT "visits_pagevisit"."user_id",
        "visits_pagevisit"."section",
        ("visits_pagevisit"."visit_time" AT TIME ZONE 'UTC')::date AS "visit_date",
@@ -273,11 +273,12 @@ Despite being powerful, there are downsides
 
 - The values returned are dictionaries, not objects
 - Foreign keys are primary-keys only
--  Displaying needs to be fairly manual
+- Displaying needs to be fairly manual
 
 <v-clicks>
 
-- Reusing the aggregation is tricky 
+- Reusing the aggregation is tricky
+- It can be slow
 
 </v-clicks>
 
@@ -339,7 +340,7 @@ TODO: Make this section header
 
 # Enter django-pgviews-redux
 
-- Library to add good support for database views to Django
+- Library which adds good support for database views to Django
 
 <v-clicks>
 
@@ -406,6 +407,15 @@ class VisitsSummaryView(View):
     """
 ```
 
+---
+
+# Defining a view
+
+```bash
+$ python manage.py sync_pgviews
+INFO [django_pgviews.sync_pgviews:119] pgview visits.VisitsSummaryView created
+```
+
 --- 
 
 # Use the view
@@ -413,7 +423,7 @@ class VisitsSummaryView(View):
 ```python {all|3|all}
 class ViewView(ListAPIView):
     serializer_class = ViewSerializer
-    queryset = VisitsSummaryView.objects.select_related("user").order_by("-count")
+    queryset = VisitsSummaryView.objects.order_by("-count")
 ```
 
 <v-click>
@@ -481,7 +491,7 @@ ORDER BY "visits_visitssummaryview"."count" DESC
 
 ---
 
-# Issues
+# Fixes of the downsides
 
 <v-clicks>
 
@@ -493,6 +503,8 @@ ORDER BY "visits_visitssummaryview"."count" DESC
   - Django & library can use the defined fields to auto-discover 
 - Reusing the aggregation is tricky
   - Aggregation is defined just once in model
+- It can be slow
+  - Mostly doesn't fix this
 
 </v-clicks>
 
@@ -577,14 +589,18 @@ TODO: make central
 
 # Materialized View
 
+<v-clicks>
+
 - Stores the query result in a temporary table
 - On update of underlying data it becomes stale
 - The view needs to be explicitly refreshed
 - Good when you don't care data is out of date
 - Good when you have batch processes updating data
-- Bad when need to refresh often and data is big
+- Bad when need to refresh often or the query is slow
 - Does use extra storage space
 - Can add indexes
+
+</v-clicks>
 
 ---
 
@@ -662,6 +678,8 @@ Exactly the same as normal view!
 
 # Other view usages
 
+<v-clicks>
+
 - Views do not need to aggregate data
   - This talk used aggregated examples
   - A view can be 1-1 with extra calculated fields or de-normalised fields
@@ -669,17 +687,24 @@ Exactly the same as normal view!
 - Backwards compatability
 - Stored expensive calculated fields
 
-<!--
+</v-clicks>
 
+
+<!--
+Would not recommend for 1-1 long term
 -->
 
 ---
 
-# Conclusion
+# What have we learned
+
+<v-clicks>
 
 - Database views can make it easier to develop your apps
 - They have pros and cons
 - You can use `django-pgviews-redux` to integrate views in your app
+
+</v-clicks>
 
 ---
 layout: statement
