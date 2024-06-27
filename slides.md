@@ -87,7 +87,8 @@ class PageVisit(models.Model):
 ```python
 >> PageVisit.objects.count()
 50741
-
+>> PageVisit.objects.filter(section="index").count()
+16830
 ```
 </v-click>
 
@@ -96,13 +97,30 @@ class PageVisit(models.Model):
 - This is syntactic sugar around `.aggregate()`
 - That method runs aggregation on the entire queryset
 
+</v-click>
+
+---
+
+# Data Aggregation In Django
+
+- An aggregation method everyone has used is queryset's `.count()`
+
+```python
+>> PageVisit.objects.count()
+50741
+>> PageVisit.objects.filter(section="index").count()
+16830
+```
+
+- This is syntactic sugar around `.aggregate()`
+- That method runs aggregation on the entire queryset
+
+
 ```python {all|2|1|3}
 >> from django.db.models import Count
 >> PageVisit.objects.aggregate(count=Count("*"))["count"] or 0
-0
+50741
 ```
-
-</v-click>
 
 ---
 
@@ -144,8 +162,8 @@ Aggregate returns a dictionary
 - `.annotate()` aggregates per item in the queryset
 
 ```python
->> qs = User.objects.filter(is_staff=False).annotate(Count("pagevisit"))
->> qs[0].pagevisit__count
+>> qs = User.objects.annotate(total_visits=Count("pagevisit"))
+>> qs[0].total_visits
 93
 ```
 
@@ -165,10 +183,10 @@ Aggregate returns a dictionary
 
 </v-click>
 ---
+layout: section
+---
 
 # Let's build something!
-
-<!-- TODO make central -->
 
 --- 
 
@@ -176,7 +194,11 @@ Aggregate returns a dictionary
 
 Let's build an API which shows section visits per user per day.
 
-<v-click>
+---
+
+# Let's build something!
+
+Let's build an API which shows section visits per user per day.
 
 ```python {all|1|4-10|2}
 class AggregateView(ListAPIView):
@@ -190,7 +212,6 @@ class AggregateView(ListAPIView):
             .order_by("-count")
         )
 ```
-</v-click>
 
 ---
 
@@ -247,7 +268,7 @@ Despite being powerful, there are downsides
 <v-clicks>
 
 - The values returned are dictionaries, not objects
-- Foreign keys are primary-keys only
+- Foreign keys are primary key by default
 </v-clicks>
 
 <v-click>
@@ -272,7 +293,7 @@ PageVisit.objects.annotate(visit_date=TruncDate("visit_time")).values(
 Despite being powerful, there are downsides
 
 - The values returned are dictionaries, not objects
-- Foreign keys are primary-keys only
+- Foreign keys are primary key by default
 - Displaying needs to be fairly manual
 
 <v-clicks>
@@ -283,10 +304,10 @@ Despite being powerful, there are downsides
 </v-clicks>
 
 ---
+layout: section
+---
 
 # Database Views
-
-<!--- TODO make central --->
 
 ---
 
@@ -321,20 +342,18 @@ GROUP BY "visits_pagevisit"."user_id",
 ```
 
 <v-click>
-But OK, how do I use this in Django?
+<div style="text-align: center; margin-top: 50px">
+
+<h2 style="color: var(--foreground);">But OK, how do I use this in Django?</h2>
+
+</div>
 </v-click>
 
-<!--
-TODO: make it central and bigger
---> 
-
+---
+layout: section
 ---
 
 # Enter django-pgviews-redux
-
-<!--
-TODO: Make this section header
--->
 
 ---
 
@@ -371,14 +390,6 @@ INSTALLED_APPS = [
     "django_pgviews",
 ]
 ```
-</v-click>
-
-<v-click>
-
-```bash
-$ python manage.py sync_pgviews
-```
-
 </v-click>
 
 ---
@@ -426,9 +437,17 @@ class ViewView(ListAPIView):
     queryset = VisitsSummaryView.objects.order_by("-count")
 ```
 
-<v-click>
+--- 
 
-```python {all|11,12|8,1-4|all}
+# Use the view
+
+```python
+class ViewView(ListAPIView):
+    serializer_class = ViewSerializer
+    queryset = VisitsSummaryView.objects.order_by("-count")
+```
+
+```python {all|7,11,12|8,1-4|all}
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -443,8 +462,6 @@ class ViewSerializer(serializers.ModelSerializer):
         fields = ["user", "section", "visit_date", "count"]
 ```
 
-</v-click>
-
 ---
 
 # Use the view
@@ -455,10 +472,10 @@ class ViewSerializer(serializers.ModelSerializer):
     {
         "user": {
             "id": 688,
-            "username": "paul29",
-            "email": "bonniechase@yahoo.com",
-            "first_name": "Jennifer",
-            "last_name": "Coleman"
+            "username": "gvanrossum",
+            "email": "guido@python.org",
+            "first_name": "Guido",
+            "last_name": "van Rossum"
         },
         "section": "index",
         "visit_date": "2024-06-12",
@@ -493,18 +510,27 @@ ORDER BY "visits_visitssummaryview"."count" DESC
 
 # Fixes of the downsides
 
+<style>
+li li {
+list-style-type: '➡️';
+}
+li li.error {
+list-style-type: '❌';
+}
+</style>
+
 <v-clicks>
 
 - The values returned are dictionaries, not objects
   - Returns instances of the view model 
-- Foreign keys are primary-keys only
-  - Can lazy load related objects, select related / prefetch related 
+- Foreign keys are primary key only by default
+  - Can lazy load related objects, use select related / prefetch related 
 - Displaying needs to be fairly manual
-  - Django & library can use the defined fields to auto-discover 
-- Reusing the aggregation is tricky
+  - Django & libraries can use the defined fields to auto-discover 
+- Reusing the aggregation is cumbersome
   - Aggregation is defined just once in model
 - It can be slow
-  - Mostly doesn't fix this
+  <li class="error">Views don't really fix</li>
 
 </v-clicks>
 
@@ -546,6 +572,10 @@ class VisitsSummaryViewFilter(filters.FilterSet):
 
 # Inside the engine under the hood
 
+---
+
+# Inside the engine under the hood
+
 ```sql {all|8-18}
 SELECT summary."id",
        summary."user_id",
@@ -573,34 +603,76 @@ ORDER BY summary."count" DESC
 
 # Inside the engine under the hood
 
+<div style="text-align: center; margin-top: 50px">
+<h2 style="color: var(--foreground);">
 Ultimately, it can be quite slow if the underlying query is slow.
+</h2>
+</div>
 
-<!--
-TODO: make central
--->
+---
+layout: section
+---
+
+# Materialized Views
 
 ---
 
-# Materialized View
-
-<!-- TODO: make central -->
-
----
-
-# Materialized View
+# Materialized Views
 
 <v-clicks>
 
+- Specific type of database view 
 - Stores the query result in a temporary table
-- On update of underlying data it becomes stale
+- On update of underlying data the view becomes stale
 - The view needs to be explicitly refreshed
-- Good when you don't care data is out of date
-- Good when you have batch processes updating data
-- Bad when need to refresh often or the query is slow
-- Does use extra storage space
 - Can add indexes
+- Does use extra storage space
+</v-clicks>
+
+---
+layout: two-cols
+---
+
+<style>
+div.good li {
+  list-style-type: '✅';
+}
+div.bad li {
+  list-style-type: '🛑';
+}
+
+</style>
+
+::default::
+
+# Materialized Views
+
+<div class="good">
+
+<v-clicks>
+
+- Don't care data can be stale
+- Batch processes updating data
 
 </v-clicks>
+
+</div>
+
+::right::
+
+# &nbsp;
+
+<div class="bad">
+
+<v-clicks>
+
+- Need to refresh often
+- The data volume is big
+- The query is slow
+
+</v-clicks>
+
+</div>
 
 ---
 
@@ -667,12 +739,12 @@ VisitsSummaryMaterializedView.refresh()
 </v-click>
 
 ---
+layout: section
+---
 
 # Using materialized views
 
 Exactly the same as normal view!
-
-<!-- todo make central -->
 
 ---
 
@@ -681,7 +753,6 @@ Exactly the same as normal view!
 <v-clicks>
 
 - Views do not need to aggregate data
-  - This talk used aggregated examples
   - A view can be 1-1 with extra calculated fields or de-normalised fields
   - It could be expansive rather than reductive
 - Backwards compatability
