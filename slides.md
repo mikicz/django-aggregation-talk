@@ -803,6 +803,4 @@ class: "text-center"
 
 TODO!
 
-<img src="/qr_link.png" style="height: 300px" />
-
 [Web](https://www.mikulaspoul.cz/talks/django-aggregation-talk/) / [Source](https://github.com/mikicz/django-aggregation-talk/)
