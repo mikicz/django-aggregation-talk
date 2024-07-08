@@ -801,6 +801,6 @@ class: "text-center"
 
 # Slides
 
-TODO!
+<img src="/qr_link.svg" style="display: inline; max-width: 40%;" />
 
 [Web](https://www.mikulaspoul.cz/talks/django-aggregation-talk/) / [Source](https://github.com/mikicz/django-aggregation-talk/)
