@@ -12,7 +12,7 @@ fonts:
 # **using database views**
 
 ### a talk by Mikuláš Poul
-### July 10th, 2024 - Europython
+### July 10th, 2024 - [<img src="/europython.svg" style="display: inline; height: 25px; margin-top: -5px" />](https://ep2024.europython.eu/) EuroPython
 
 ---
 
