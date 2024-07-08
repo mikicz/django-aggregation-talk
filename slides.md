@@ -372,7 +372,20 @@ layout: section
 
 </v-clicks>
 
-<!-- TODO: mention what features i've built -->
+
+<!--
+<h1>
+Features I or contributors have added
+<ul>
+  <li>Adding indexes
+  <li>NO DATA
+  <li>Smarter sync_pgviews (do not always recreate)
+  <li>Dynamic SQL
+  <li>Multiple databases
+  <li>Better schema support
+</ul>
+</h1>
+-->
 
 ---
 
@@ -431,19 +444,36 @@ $ python manage.py sync_pgviews
 INFO [django_pgviews.sync_pgviews:119] pgview visits.VisitsSummaryView created
 ```
 
-<!-- A bit like migrate -->
+<!--
+<h1>This is a bit like migrate or syncdb</h3> 
+-->
 
 --- 
 
 # Use the view
 
-<!-- TODO add before and after -->
+```python {4-10}
+class AggregateView(ListAPIView):
+    serializer_class = AggregateSerializer
+
+    def get_queryset(self):
+        return (
+            PageVisit.objects.annotate(visit_date=TruncDate("visit_time"))
+            .values("user", "section", "visit_date")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+```
+
+<v-click>
 
 ```python {all|3|all}
 class ViewView(ListAPIView):
     serializer_class = ViewSerializer
     queryset = VisitsSummaryView.objects.order_by("-count")
 ```
+
+</v-click>
 
 --- 
 
@@ -455,7 +485,25 @@ class ViewView(ListAPIView):
     queryset = VisitsSummaryView.objects.order_by("-count")
 ```
 
-```python {all|7,11,12|8,1-4|all}
+```python {all|3-4}
+class ViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitsSummaryView
+        fields = ["user", "section", "visit_date", "count"]
+```
+
+
+--- 
+
+# Use the view
+
+```python
+class ViewView(ListAPIView):
+    serializer_class = ViewSerializer
+    queryset = VisitsSummaryView.objects.order_by("-count")
+```
+
+```python {8,1-4}
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -469,8 +517,6 @@ class ViewSerializer(serializers.ModelSerializer):
         model = VisitsSummaryView
         fields = ["user", "section", "visit_date", "count"]
 ```
-
-<!-- todo without the user serializer -->
 
 ---
 
@@ -544,7 +590,6 @@ list-style-type: '❌';
 
 </v-clicks>
 
-<!-- TODO: investigate different point icon -->
 
 ---
 
@@ -632,18 +677,16 @@ layout: section
 <v-clicks>
 
 - Specific type of database view 
-- Stores the query result in a temporary table
-- On update of underlying data the view becomes stale
-- The view needs to be explicitly refreshed
-- Can add indexes
+- On create it evaluates the query and stores result on disk
+- Select queries look at stored results
+- On update of underlying data the view becomes stale, needs refreshing
+- Refreshing the data recalculates the result
+- You can add indexes
 - Does use extra storage space
 
 </v-clicks>
 
-<!-- TODO: a different word for a temporary table -->
-<!-- TODO: drive home point about evaluating and writing it all down -->
-
----
+--- 
 layout: two-cols
 ---
 
