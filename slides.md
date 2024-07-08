@@ -182,6 +182,7 @@ Aggregate returns a dictionary
 ```
 
 </v-click>
+
 ---
 layout: section
 ---
@@ -269,6 +270,7 @@ Despite being powerful, there are downsides
 
 - The values returned are dictionaries, not objects
 - Foreign keys are primary key by default
+
 </v-clicks>
 
 <v-click>
@@ -635,6 +637,7 @@ layout: section
 - The view needs to be explicitly refreshed
 - Can add indexes
 - Does use extra storage space
+
 </v-clicks>
 
 <!-- TODO: a different word for a temporary table -->
