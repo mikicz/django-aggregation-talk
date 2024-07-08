@@ -54,7 +54,7 @@ Mention all links & relevant details are on mikulaspoul, plus a blog and link to
 
 # Data Aggregation In Django
 
-- Aggregation - combining multiple pices of information in a single result
+- Aggregation - combining multiple pieces of information into a single result
 
 <v-clicks>
 
@@ -192,13 +192,13 @@ layout: section
 
 # Let's build something!
 
-Let's build an API which shows section visits per user per day.
+Let's build an API which shows count of section visits per user per day.
 
 ---
 
 # Let's build something!
 
-Let's build an API which shows section visits per user per day.
+Let's build an API which shows count of section visits per user per day.
 
 ```python {all|1|4-10|2}
 class AggregateView(ListAPIView):
@@ -217,7 +217,7 @@ class AggregateView(ListAPIView):
 
 # Let's build something!
 
-Let's build an API which shows section visits per user per day.
+Let's build an API which shows count of section visits per user per day.
 
 ```python
 class AggregateSerializer(serializers.Serializer):
@@ -261,7 +261,7 @@ ORDER BY 4 DESC  --- refers to count
 
 ---
 
-# Downsides of the django aggregation
+# Downsides of the Django aggregation
 
 Despite being powerful, there are downsides
 
@@ -288,7 +288,7 @@ PageVisit.objects.annotate(visit_date=TruncDate("visit_time")).values(
 
 ---
 
-# Downsides of the django aggregation
+# Downsides of the Django aggregation
 
 Despite being powerful, there are downsides
 
@@ -370,6 +370,8 @@ layout: section
 
 </v-clicks>
 
+<!-- TODO: mention what features i've built -->
+
 ---
 
 # Using django-pgviews-redux
@@ -427,9 +429,13 @@ $ python manage.py sync_pgviews
 INFO [django_pgviews.sync_pgviews:119] pgview visits.VisitsSummaryView created
 ```
 
+<!-- A bit like migrate -->
+
 --- 
 
 # Use the view
+
+<!-- TODO add before and after -->
 
 ```python {all|3|all}
 class ViewView(ListAPIView):
@@ -461,6 +467,8 @@ class ViewSerializer(serializers.ModelSerializer):
         model = VisitsSummaryView
         fields = ["user", "section", "visit_date", "count"]
 ```
+
+<!-- todo without the user serializer -->
 
 ---
 
@@ -628,6 +636,9 @@ layout: section
 - Can add indexes
 - Does use extra storage space
 </v-clicks>
+
+<!-- TODO: a different word for a temporary table -->
+<!-- TODO: drive home point about evaluating and writing it all down -->
 
 ---
 layout: two-cols
