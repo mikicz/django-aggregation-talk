@@ -586,7 +586,7 @@ list-style-type: '❌';
 - Reusing the aggregation is cumbersome
   - Aggregation is defined just once in model
 - It can be slow
-  <li class="error">Views don't really fix</li>
+  <ul><li class="error">Views don't really fix</li></ul>
 
 </v-clicks>
 
